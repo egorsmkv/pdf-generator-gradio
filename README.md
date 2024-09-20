@@ -6,6 +6,10 @@
 - Gradio to provide a web interface with user parameters (via Components)
 - Docker to run the app
 
+## Demo
+
+<img src="./demo.jpeg" width="800">
+
 ## Development
 
 Install Python packages:
