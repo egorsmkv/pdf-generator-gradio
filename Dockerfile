@@ -48,7 +48,7 @@ RUN curl https://pyenv.run | bash
 
 ENV PATH=${HOME}/.pyenv/shims:${HOME}/.pyenv/bin:${PATH}
 
-ARG PYTHON_VERSION=3.12.5
+ARG PYTHON_VERSION=3.12.6
 RUN pyenv install ${PYTHON_VERSION} && \
     pyenv global ${PYTHON_VERSION} && \
     pyenv rehash && \
