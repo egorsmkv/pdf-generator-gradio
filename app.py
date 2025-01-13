@@ -1,6 +1,6 @@
 import sys
 import subprocess
-from os import remove
+from os import remove, getenv
 from os.path import exists
 
 from importlib.metadata import version
@@ -9,7 +9,37 @@ from jinja2 import Environment, PackageLoader, select_autoescape
 
 import gradio as gr
 
+# Config
+concurrency_limit = getenv("CONCURRENCY_LIMIT", 1)
 
+typst_bin_path = getenv("TYPST_BIN", "/home/user/app/typst")
+imagemagic_bin_path = getenv("IMAGEMAGIC_BIN", "/usr/bin/convert")
+
+# App description
+title = "Typst-based PDF generation"
+
+examples = [
+    """
+I begin this story with a neutral statement.
+Basically this is a very silly test.
+""",
+]
+
+description_head = f"""
+# {title}
+
+## Overview
+
+We use https://typst.app to generate a PDF file with some parameters from this Gradio app.
+""".strip()
+
+tech_env = f"""
+#### Environment
+
+- Python: {sys.version}
+""".strip()
+
+# Load the Typst template
 env = Environment(loader=PackageLoader("ui"), autoescape=select_autoescape())
 template = env.get_template("typst_template.typ")
 
@@ -71,53 +101,6 @@ def convert_document(bin_paths, text):
     return image
 
 
-# Config
-concurrency_limit = 5
-
-typst_bin_path = "/home/user/app/typst"
-imagemagic_bin_path = "/usr/bin/convert"
-
-examples = [
-    """I begin this story with a neutral statement.  
-Basically this is a very silly test.  
-""",
-]
-
-title = "Typst-based PDF generation"
-
-# https://www.tablesgenerator.com/markdown_tables
-authors_table = """
-## Authors
-
-Follow them on social networks and **contact** if you need any help or have any questions:
-
-| <img src="https://avatars.githubusercontent.com/u/7875085?v=4" width="100"> **Yehor Smoliakov** |
-|-------------------------------------------------------------------------------------------------|
-| https://t.me/smlkw in Telegram                                                                  |
-| https://x.com/yehor_smoliakov at X                                                              |
-| https://github.com/egorsmkv at GitHub                                                           |
-| https://huggingface.co/Yehor at Hugging Face                                                    |
-| or use egorsmkv@gmail.com                                                                       |
-""".strip()
-
-description_head = f"""
-# {title}
-
-## Overview
-
-We use https://typst.app to generate a PDF file with some parameters from this Gradio app.
-""".strip()
-
-description_foot = f"""
-{authors_table}
-""".strip()
-
-tech_env = f"""
-#### Environment
-
-- Python: {sys.version}
-""".strip()
-
 imagemagick_version_info = app_version(imagemagic_bin_path)
 if imagemagick_version_info.returncode != 0:
     print("Error: ImageMagick version command failed.")
@@ -144,7 +127,7 @@ r_tech_env = f"""
 tech_libraries = f"""
 #### Libraries
 
-- gradio: {version('gradio')}
+- gradio: {version("gradio")}
 """.strip()
 
 
@@ -210,8 +193,6 @@ with demo:
 
     with gr.Row():
         gr.Examples(label="Choose an example", inputs=text, examples=examples)
-
-    gr.Markdown(description_foot)
 
     gr.Markdown("### Gradio app uses:")
     gr.Markdown(tech_env)
