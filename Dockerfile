@@ -30,7 +30,6 @@ RUN useradd -m -u 1001 user
 USER user
 ENV HOME=/home/user
 ENV PATH=/home/user/.local/bin:${PATH}
-ENV MAGICK_CONFIGURE_PATH=${HOME}/app
 WORKDIR ${HOME}/app
 
 RUN wget "https://github.com/typst/typst/releases/download/v0.12.0/typst-x86_64-unknown-linux-musl.tar.xz" && \
