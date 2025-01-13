@@ -13,14 +13,14 @@
 
 Clone the repository:
 
-```bash
+```shell
 git clone https://github.com/egorsmkv/pdf-generator-gradio
 cd pdf-generator-gradio
 ```
 
 Install `typst`:
 
-```bash
+```shell
 cargo install typst-cli
 ```
 
@@ -28,7 +28,7 @@ cargo install typst-cli
 
 Create virtual environment and install dependencies:
 
-```bash
+```shell
 uv venv --python 3.13
 
 source .venv/bin/activate
@@ -41,7 +41,7 @@ uv pip install -r requirements-dev.txt
 
 Run Gradio app locally:
 
-```bash
+```shell
 export TYPST_BIN=/home/yehor/.cargo/bin/typst
 
 gradio app.py
@@ -51,13 +51,13 @@ gradio app.py
 
 Build the Docker image:
 
-```bash
+```shell
 docker build -t pdf-generator-gradio .
 ```
 
 Run:
 
-```bash
+```shell
 docker run --rm -p 7860:7860 -it pdf-generator-gradio
 
 # Enable Gradio sharing
