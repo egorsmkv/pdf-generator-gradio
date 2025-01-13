@@ -1,11 +1,13 @@
+import os
 import sys
 import subprocess
+from pathlib import Path
 from os import remove, getenv
 from os.path import exists
 
 from importlib.metadata import version
 from PIL import Image
-from jinja2 import Environment, PackageLoader, select_autoescape
+from minijinja import Environment
 
 import gradio as gr
 
@@ -40,8 +42,17 @@ tech_env = f"""
 """.strip()
 
 # Load the Typst template
-env = Environment(loader=PackageLoader("ui"), autoescape=select_autoescape())
-template = env.get_template("typst_template.typ")
+templates = {
+    "document": Path("document.typ").read_text(),
+}
+if "GRADIO_WATCH_DIRS" in os.environ:
+    env = Environment(
+        templates=templates,
+        debug=True,
+    )
+    env.reload()
+else:
+    env = Environment()
 
 
 def app_version(bin_path):
@@ -58,7 +69,7 @@ def typst_compile(typst_bin_path, filename):
 def convert_document(bin_paths, text):
     print("Converting...")
 
-    document = template.render(text=text)
+    document = env.render_template("document", text=text)
 
     # Write the document to a .typ file
     with open("document.typ", "w") as f:
