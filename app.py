@@ -12,6 +12,8 @@ import gradio as gr
 # Config
 document_name = "document-template.typ"
 
+do_share = getenv("DO_SHARE")
+
 concurrency_limit = getenv("CONCURRENCY_LIMIT", 1)
 
 typst_bin_path = getenv("TYPST_BIN", "/home/user/app/typst")
@@ -180,4 +182,8 @@ with demo:
 
 if __name__ == "__main__":
     demo.queue()
-    demo.launch()
+
+    if do_share:
+        demo.launch(share=True)
+    else:
+        demo.launch()
