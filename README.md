@@ -10,6 +10,13 @@
 
 <img src="./demo.jpeg" width="800">
 
+## Install
+
+```
+git clone https://github.com/egorsmkv/pdf-generator-gradio
+cd pdf-generator-gradio
+```
+
 ## Development
 
 Install Python packages:
