@@ -15,7 +15,6 @@ document_name = "document-template.typ"
 concurrency_limit = getenv("CONCURRENCY_LIMIT", 1)
 
 typst_bin_path = getenv("TYPST_BIN", "/home/user/app/typst")
-imagemagic_bin_path = getenv("IMAGEMAGIC_BIN", "/usr/bin/convert")
 
 # App description
 title = "Typst-based PDF generation"
@@ -46,9 +45,12 @@ def app_version(bin_path):
     return subprocess.run([bin_path, "--version"], capture_output=True, text=True)
 
 
-def typst_compile(typst_bin_path, filename):
+def typst_compile(typst_bin_path, filename, export_template):
+    args = [typst_bin_path, "compile", filename, export_template]
+    print("Running:", args)
+
     return subprocess.run(
-        [typst_bin_path, "compile", filename],
+        args,
         capture_output=False,
     )
 
@@ -64,50 +66,36 @@ def convert_document(bin_paths, text):
     formatted_document = env.render_template("document", text=text)
 
     # Write the rendered document to a temporary file
-    Path("document.typ").write_text(formatted_document)
+    document_file = Path("document.typ")
+    document_file.write_text(formatted_document)
 
     # Compile the .typ file to a .pdf file
-    c = typst_compile(bin_paths["typst"], "document.typ")
+    c = typst_compile(bin_paths["typst"], "document.typ", "document.pdf")
     if c.returncode != 0:
         raise gr.Error("Typst compilation failed.")
 
-    print(c)
+    print("Result:", c)
 
     # Extract the first page of the PDF file
-    cmd = [
-        bin_paths["imagemagic"],
-        "document.pdf[0]",
-        "-fuzz",
-        "25%",
-        "-fill",
-        "white",
-        "-opaque",
-        "white",
-        "-flatten",
-        "first_page.png",
-    ]
-    print(" ".join(cmd))
-    c = subprocess.run(
-        cmd,
-    )
-
+    c = typst_compile(bin_paths["typst"], "document.typ", "file-{n}.png")
     if c.returncode != 0:
-        raise gr.Error("Failed to extract the first page of the PDF file.")
+        raise gr.Error("Typst exporting to PNGs failed.")
+
+    print("Result:", c)
+
+    first_page = Path("file-1.png")
+    if not first_page.exists():
+        raise gr.Error("The first page has not been exported.")
 
     # Move the image to an object
-    image = Image.open("first_page.png")
+    image = Image.open(first_page.absolute())
 
     # Remove the temporary files
-    Path("first_page.png").unlink(missing_ok=True)
-    Path("document.typ").unlink(missing_ok=True)
+    first_page.unlink(missing_ok=True)
+    document_file.unlink(missing_ok=True)
 
     return image
 
-
-imagemagick_version_info = app_version(imagemagic_bin_path)
-if imagemagick_version_info.returncode != 0:
-    print("Error: ImageMagick version command failed.")
-    exit(1)
 
 typst_version_info = app_version(typst_bin_path)
 if typst_version_info.returncode != 0:
@@ -119,12 +107,6 @@ r_tech_env = f"""
 
 ```
 {typst_version_info.stdout.strip()}
-```
-
-#### ImageMagick Environment
-
-```
-{imagemagick_version_info.stdout.strip()}
 ```
 """.strip()
 
@@ -147,7 +129,6 @@ def generate_pdf(text, progress=gr.Progress()):
 
     bin_paths = {
         "typst": typst_bin_path,
-        "imagemagic": imagemagic_bin_path,
     }
     image = convert_document(bin_paths, text)
 

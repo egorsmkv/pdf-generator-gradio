@@ -44,7 +44,6 @@ Run Gradio app locally:
 
 ```
 export TYPST_BIN=/home/yehor/.cargo/bin/typst
-export IMAGEMAGIC_BIN=/usr/bin/convert
 
 gradio app.py
 ```

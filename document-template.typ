@@ -30,4 +30,3 @@ $
 $
 
 To learn more about math, see corresponding chapter.
-
