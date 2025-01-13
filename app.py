@@ -1,9 +1,7 @@
-import os
 import sys
 import subprocess
 from pathlib import Path
-from os import remove, getenv
-from os.path import exists
+from os import getenv
 
 from importlib.metadata import version
 from PIL import Image
@@ -12,6 +10,8 @@ from minijinja import Environment
 import gradio as gr
 
 # Config
+document_name = "document-template.typ"
+
 concurrency_limit = getenv("CONCURRENCY_LIMIT", 1)
 
 typst_bin_path = getenv("TYPST_BIN", "/home/user/app/typst")
@@ -41,19 +41,6 @@ tech_env = f"""
 - Python: {sys.version}
 """.strip()
 
-# Load the Typst template
-templates = {
-    "document": Path("document.typ").read_text(),
-}
-if "GRADIO_WATCH_DIRS" in os.environ:
-    env = Environment(
-        templates=templates,
-        debug=True,
-    )
-    env.reload()
-else:
-    env = Environment()
-
 
 def app_version(bin_path):
     return subprocess.run([bin_path, "--version"], capture_output=True, text=True)
@@ -69,11 +56,15 @@ def typst_compile(typst_bin_path, filename):
 def convert_document(bin_paths, text):
     print("Converting...")
 
-    document = env.render_template("document", text=text)
+    env = Environment(
+        templates={
+            "document": Path("document-template.typ").read_text(),
+        }
+    )
+    formatted_document = env.render_template("document", text=text)
 
-    # Write the document to a .typ file
-    with open("document.typ", "w") as f:
-        f.write(document)
+    # Write the rendered document to a temporary file
+    Path("document.typ").write_text(formatted_document)
 
     # Compile the .typ file to a .pdf file
     c = typst_compile(bin_paths["typst"], "document.typ")
@@ -107,7 +98,8 @@ def convert_document(bin_paths, text):
     image = Image.open("first_page.png")
 
     # Remove the temporary files
-    remove("first_page.png")
+    Path("first_page.png").unlink(missing_ok=True)
+    Path("document.typ").unlink(missing_ok=True)
 
     return image
 
@@ -121,6 +113,7 @@ typst_version_info = app_version(typst_bin_path)
 if typst_version_info.returncode != 0:
     print("Error: Typst version command failed.")
     exit(1)
+
 r_tech_env = f"""
 #### Typst Environment
 
@@ -147,10 +140,8 @@ def generate_pdf(text, progress=gr.Progress()):
         raise gr.Error("Please paste your text.")
 
     # Remove the previous PDF file and Typst file
-    if exists("document.pdf"):
-        remove("document.pdf")
-    if exists("document.typ"):
-        remove("document.typ")
+    Path("document.pdf").unlink(missing_ok=True)
+    Path("document.typ").unlink(missing_ok=True)
 
     gr.Info("Generating the PDF document", duration=1)
 
@@ -160,7 +151,7 @@ def generate_pdf(text, progress=gr.Progress()):
     }
     image = convert_document(bin_paths, text)
 
-    gr.Info("Finished!", duration=2)
+    gr.Success("Finished!", duration=2)
 
     pdf_file = gr.DownloadButton(
         label="Download document.pdf",
@@ -168,16 +159,12 @@ def generate_pdf(text, progress=gr.Progress()):
         visible=True,
     )
 
-    if exists("document.typ"):
-        remove("document.typ")
-
     return [image, pdf_file]
 
 
 demo = gr.Blocks(
     title=title,
     analytics_enabled=False,
-    # theme="huggingface",
     theme=gr.themes.Base(),
 )
 
